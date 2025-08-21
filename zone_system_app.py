@@ -38,13 +38,16 @@ def compute_zone5_ev(zone_choice: int, readings_ev: dict) -> float:
     Returns EV_final that places Zone V, given the chosen shadow placement.
 
     If 'Darkest' is provided:
-      - To place darkest on Zone Z (2 or 3), you must OPEN UP by (5 - Z) stops
-        relative to its metered value. More exposure = lower EV.
-      - Therefore EV_final = EV_darkest - (5 - Z)
+      - To place darkest on Zone Z (2 or 3), exposure must be opened up by (5 - Z) stops
+        relative to its metered Zone V. Opening up = longer shutter = smaller EV.
+      - BUT EV_final defines the Zone V *meter* EV we're aiming for; in EV terms, we ADD (5 - Z)
+        because EV_final should be *higher* by that many stops compared to the darkest's EV.
+        Derivation: Zone = 5 + (EV_read - EV_final). For Zone Z, set  Z = 5 + (EV_dark - EV_final)
+        -> EV_final = EV_dark + (5 - Z).
     Else fall back to Subject (Zone V) or Midtone (Zone V).
     """
     if 'Darkest' in readings_ev:
-        return readings_ev['Darkest'] - (5 - zone_choice)
+        return readings_ev['Darkest'] + (5 - zone_choice)
     elif 'Subject' in readings_ev:
         return readings_ev['Subject']
     elif 'Midtone' in readings_ev:
@@ -56,8 +59,8 @@ def compute_zone5_ev(zone_choice: int, readings_ev: dict) -> float:
 def zone_from_reading(ev_read: float, ev_final: float) -> float:
     """
     Map a metered EV to Zone number (0–10) under the chosen exposure.
-    Opening up (lower EV_final) moves the reading to a HIGHER zone.
     Correct mapping: Zone = 5 + (EV_read - EV_final)
+    (If a reading is higher EV than EV_final by +3 stops, it lands at Zone 8.)
     """
     return 5 + (ev_read - ev_final)
 
@@ -92,8 +95,8 @@ def recommend_exposure(aperture: float, iso: int, zone_choice: int,
     # Adjust for chosen aperture & ISO relative to f/16 @ ISO 100
     reference_aperture = 16
     reference_iso = 100
-    aperture_adjust = math.log2((aperture / reference_aperture) ** 2)  # +stops if aperture is wider
-    iso_adjust = math.log2(iso / reference_iso)                         # +stops if ISO is higher
+    aperture_adjust = math.log2((aperture / reference_aperture) ** 2)  # wider aperture -> positive
+    iso_adjust = math.log2(iso / reference_iso)                         # higher ISO -> positive
     ev_for_shutter = ev_final - aperture_adjust - iso_adjust
 
     # Convert to shutter and snap to standard
@@ -180,14 +183,14 @@ st.subheader("Light Meter Readings (Shutter Speeds)")
 col1, col2 = st.columns(2)
 with col1:
     brightest = st.select_slider("☀️ Brightest part", options=STANDARD_SHUTTERS,
-                                 value=1/125, format_func=format_shutter)
+                                 value=1/1000, format_func=format_shutter)
     midtone   = st.select_slider("🌗 Mid-tone", options=STANDARD_SHUTTERS,
-                                 value=1/60, format_func=format_shutter)
+                                 value=1/30, format_func=format_shutter)
 with col2:
     darkest = st.select_slider("🌑 Darkest part", options=STANDARD_SHUTTERS,
-                               value=1/30, format_func=format_shutter)
+                               value=1/15, format_func=format_shutter)
     subject = st.select_slider("🎯 Subject", options=STANDARD_SHUTTERS,
-                               value=1/60, format_func=format_shutter)
+                               value=1/125, format_func=format_shutter)
 
 st.markdown("---")
 
