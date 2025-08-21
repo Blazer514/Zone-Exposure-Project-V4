@@ -40,10 +40,7 @@ def compute_zone5_ev(zone_choice: int, readings_ev: dict) -> float:
     If 'Darkest' is provided:
       - To place darkest on Zone Z (2 or 3), exposure must be opened up by (5 - Z) stops
         relative to its metered Zone V. Opening up = longer shutter = smaller EV.
-      - BUT EV_final defines the Zone V *meter* EV we're aiming for; in EV terms, we ADD (5 - Z)
-        because EV_final should be *higher* by that many stops compared to the darkest's EV.
-        Derivation: Zone = 5 + (EV_read - EV_final). For Zone Z, set  Z = 5 + (EV_dark - EV_final)
-        -> EV_final = EV_dark + (5 - Z).
+      - In EV terms for the meter reference, EV_final = EV_darkest + (5 - Z)
     Else fall back to Subject (Zone V) or Midtone (Zone V).
     """
     if 'Darkest' in readings_ev:
@@ -173,7 +170,7 @@ with colB:
 with colC:
     zone_choice = st.radio("🌑 Place darkest in:",
                            [2, 3],
-                           index=1,
+                           index=1,  # Zone III by default
                            horizontal=True)
 
 st.markdown("---")
@@ -183,14 +180,14 @@ st.subheader("Light Meter Readings (Shutter Speeds)")
 col1, col2 = st.columns(2)
 with col1:
     brightest = st.select_slider("☀️ Brightest part", options=STANDARD_SHUTTERS,
-                                 value=1/1000, format_func=format_shutter)
+                                 value=1/60, format_func=format_shutter)
     midtone   = st.select_slider("🌗 Mid-tone", options=STANDARD_SHUTTERS,
-                                 value=1/30, format_func=format_shutter)
+                                 value=1/4, format_func=format_shutter)
 with col2:
     darkest = st.select_slider("🌑 Darkest part", options=STANDARD_SHUTTERS,
-                               value=1/15, format_func=format_shutter)
+                               value=1/2, format_func=format_shutter)
     subject = st.select_slider("🎯 Subject", options=STANDARD_SHUTTERS,
-                               value=1/125, format_func=format_shutter)
+                               value=1/8, format_func=format_shutter)
 
 st.markdown("---")
 
